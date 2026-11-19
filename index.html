@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Labirinto da Memória: Consciência Negra</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0d0907;
+            color: #f3f4f6;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-title {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* Cores Vibrantes Afro-Brasileiras */
+        .bg-afro-gold { background-color: #f59e0b; }
+        .text-afro-gold { color: #fbbf24; }
+        .border-afro-gold { border-color: #f59e0b; }
+
+        /* Estilização Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1c130e; }
+        ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 4px; }
+
+        /* Animação de pulso no item colecionável */
+        @keyframes floatGlow {
+            0%, 100% { transform: translateY(0px) scale(1); filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.9)); }
+            50% { transform: translateY(-4px) scale(1.05); filter: drop-shadow(0 0 14px rgba(251, 191, 36, 1)); }
+        }
+        .animate-glow {
+            animation: floatGlow 1.8s ease-in-out infinite;
+        }
+
+        /* Transição Suave nos Botões Touch */
+        .touch-btn {
+            touch-action: none;
+            transition: transform 0.05s ease, background-color 0.1s;
+        }
+        .touch-btn:active {
+            transform: scale(0.92);
+            background-color: rgba(245, 158, 11, 0.4) !important;
+        }
+
+        /* Modal blur */
+        .backdrop-blur-md {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between overflow-hidden bg-stone-950">
+
+    <!-- TOP BAR / HUD MOBILE FIRST -->
+    <header class="w-full bg-stone-900/90 border-b-2 border-amber-500/60 px-4 py-2.5 flex items-center justify-between z-20 shadow-md">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-stone-950 font-bold text-lg shadow-inner">
+                ✊🏿
+            </div>
+            <div>
+                <h1 class="font-title text-base sm:text-lg font-bold text-amber-400 leading-none">Memória Negra</h1>
+                <p class="text-[10px] sm:text-xs text-amber-200/70">Resgate os Registros</p>
+            </div>
+        </div>
+
+        <!-- Progresso + Botão de Inventário -->
+        <div class="flex items-center space-x-2">
+            <div class="bg-black/50 border border-amber-500/40 px-2.5 py-1 rounded-full flex items-center space-x-1.5 text-xs">
+                <span class="text-amber-400">📜</span>
+                <span id="collected-count" class="font-title font-bold text-amber-300">0/6</span>
+            </div>
+
+            <button id="btn-inventory" onclick="toggleInventory()" class="relative bg-amber-500 active:bg-amber-400 text-stone-950 font-title font-bold px-3 py-1.5 rounded-full text-xs flex items-center space-x-1.5 shadow-lg">
+                <i class="fa-solid fa-bag-shopping text-sm"></i>
+                <span>Inventário</span>
+                <span id="inv-badge" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-600 rounded-full animate-bounce"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL DO CANVAS DE JOGO -->
+    <main class="relative flex-1 w-full h-full flex flex-col items-center justify-center bg-stone-950 overflow-hidden">
+        <!-- Canvas Otimizado Mobile -->
+        <div class="relative max-w-full max-h-full flex items-center justify-center p-2">
+            <canvas id="gameCanvas" class="rounded-2xl border-2 border-amber-600/50 shadow-2xl bg-stone-900"></canvas>
+        </div>
+    </main>
+
+    <!-- CONTROLES MOBILE (D-PAD TOUCH VIRTUAL) NA PARTE INFERIOR -->
+    <footer class="w-full bg-stone-900/90 border-t border-amber-900/40 p-3 flex justify-between items-center z-20">
+        <!-- Joystick / D-Pad direcional bem espaçado para telas de toque -->
+        <div class="relative w-36 h-36 mx-auto grid grid-cols-3 gap-1.5 p-1 bg-stone-950/80 rounded-full border border-amber-600/30 shadow-inner">
+            <div></div>
+            <button id="btn-up" class="touch-btn bg-stone-800 text-amber-400 rounded-t-2xl flex items-center justify-center text-xl active:text-white">
+                <i class="fa-solid fa-caret-up"></i>
+            </button>
+            <div></div>
+
+            <button id="btn-left" class="touch-btn bg-stone-800 text-amber-400 rounded-l-2xl flex items-center justify-center text-xl active:text-white">
+                <i class="fa-solid fa-caret-left"></i>
+            </button>
+            <div class="flex items-center justify-center">
+                <div class="w-3 h-3 rounded-full bg-amber-500/40"></div>
+            </div>
+            <button id="btn-right" class="touch-btn bg-stone-800 text-amber-400 rounded-r-2xl flex items-center justify-center text-xl active:text-white">
+                <i class="fa-solid fa-caret-right"></i>
+            </button>
+
+            <div></div>
+            <button id="btn-down" class="touch-btn bg-stone-800 text-amber-400 rounded-b-2xl flex items-center justify-center text-xl active:text-white">
+                <i class="fa-solid fa-caret-down"></i>
+            </button>
+            <div></div>
+        </div>
+    </footer>
+
+    <!-- INVENTÁRIO SLIDE-OVER OTIMIZADO PARA CELULAR -->
+    <div id="inventory-drawer" class="fixed inset-y-0 right-0 w-full sm:w-80 bg-stone-900 border-l-2 border-amber-500 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-40 flex flex-col">
+        <div class="p-4 border-b border-amber-900/50 flex justify-between items-center bg-stone-950">
+            <h2 class="font-title text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-book-open"></i> Registros Desbloqueados
+            </h2>
+            <button onclick="toggleInventory()" class="w-8 h-8 rounded-full bg-stone-800 text-stone-300 flex items-center justify-center text-lg active:bg-amber-500 active:text-black">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <p class="px-4 py-2 text-xs text-amber-200/60 bg-amber-950/30">
+            Toque nos registros para abrir o documento histórico.
+        </p>
+
+        <div id="inventory-list" class="flex-1 p-3 overflow-y-auto space-y-2.5">
+            <!-- Itens inseridos dinamicamente -->
+        </div>
+    </div>
+
+    <!-- MODAL DE LEITURA FLUIDO E FORMATADO PARA TELAS PEQUENAS -->
+    <div id="reading-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
+        <div class="bg-stone-900 border-2 border-amber-500 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
+            
+            <!-- Header Modal -->
+            <div class="bg-stone-950 p-3.5 border-b border-amber-900/40 flex justify-between items-center">
+                <div class="flex items-center space-x-2.5">
+                    <span id="modal-icon" class="text-3xl">📜</span>
+                    <div>
+                        <h3 id="modal-title" class="font-title text-base font-bold text-amber-400 leading-tight">Título</h3>
+                        <p id="modal-subtitle" class="text-[11px] text-amber-200/70">Subtítulo</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-stone-800 text-stone-400 flex items-center justify-center text-base active:bg-amber-500 active:text-black">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Conteúdo da Leitura -->
+            <div class="p-4 overflow-y-auto flex-1 space-y-3 text-stone-200 text-xs sm:text-sm leading-relaxed">
+                <div id="modal-image-container" class="w-full h-36 bg-stone-950 rounded-xl overflow-hidden border border-amber-900/50 flex items-center justify-center">
+                    <div id="modal-svg-art" class="w-full h-full"></div>
+                </div>
+
+                <div id="modal-body-text" class="text-stone-300 space-y-2 text-justify">
+                    <!-- Texto do documento -->
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="p-3 bg-stone-950 border-t border-amber-900/40 text-center">
+                <button onclick="closeModal()" class="w-full bg-amber-500 active:bg-amber-400 text-stone-950 font-title font-bold py-2 rounded-xl text-xs transition">
+                    Fechar Leitura
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VITÓRIA CARISMÁTICO -->
+    <div id="victory-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-stone-900 border-2 border-amber-400 rounded-3xl max-w-xs w-full p-5 text-center shadow-2xl space-y-4">
+            <div class="w-20 h-20 bg-amber-500/20 border-2 border-amber-400 rounded-full flex items-center justify-center mx-auto text-4xl animate-bounce">
+                👑
+            </div>
+            <div>
+                <h2 class="font-title text-xl font-bold text-amber-400">Parabéns, Guerreiro(a)!</h2>
+                <p class="text-xs text-stone-300 mt-1.5">Você resgatou toda a sabedoria da Consciência Negra e completou o mapa!</p>
+            </div>
+            <button onclick="restartGame()" class="w-full bg-amber-500 active:bg-amber-400 text-stone-950 font-title font-bold py-3 rounded-2xl transition shadow-lg text-sm">
+                Jogar Novamente 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- LÓGICA DO JOGO -->
+    <script>
+        // BANCO DE DADOS DE REGISTROS HISTÓRICOS
+        const HISTORICAL_RECORDS = [
+            {
+                id: 1,
+                title: "Zumbi dos Palmares",
+                subtitle: "Líder e Símbolo da Resistência",
+                icon: "👑",
+                color: "#f59e0b",
+                desc: "Zumbi liderou o Quilombo dos Palmares, o maior refúgio de homens e mulheres escravizados no período colonial. Ele combateu a opressão com coragem inabalável. O dia 20 de novembro celebra o Dia da Consciência Negra em honra ao seu legado imortal de liberdade.",
+                artType: "zumbi"
+            },
+            {
+                id: 2,
+                title: "Dandara dos Palmares",
+                subtitle: "Estrategista e Guerreira",
+                icon: "⚔️",
+                color: "#ef4444",
+                desc: "Dandara dominava a capoeira e foi fundamental nas estratégias de defesa e batalhas de Palmares. Recusava qualquer proposta que não garantisse a liberdade total de seu povo, representando a força inestimável das mulheres negras.",
+                artType: "dandara"
+            },
+            {
+                id: 3,
+                title: "Luiz Gama",
+                subtitle: "Patrono da Liberdade e Jurista",
+                icon: "⚖️",
+                color: "#3b82f6",
+                desc: "Vendido ilegalmente como escravo na infância, Luiz Gama aprendeu a ler sozinho aos 17 anos e conquistou sua liberdade. Como advogado autodidata, libertou mais de 500 pessoas escravizadas nos tribunais sem cobrar valor algum.",
+                artType: "luizgama"
+            },
+            {
+                id: 4,
+                title: "Machado de Assis",
+                subtitle: "Gênio da Literatura Brasileira",
+                icon: "✍️",
+                color: "#10b981",
+                desc: "Homem negro nascido no Rio de Janeiro, Machado de Assis superou todas as barreiras sociais para se tornar o maior escritor da literatura nacional e fundador da Academia Brasileira de Letras.",
+                artType: "machado"
+            },
+            {
+                id: 5,
+                title: "Maria Firmina dos Reis",
+                subtitle: "Primeira Romancista Negra",
+                icon: "📚",
+                color: "#a855f7",
+                desc: "Nascida no Maranhão, Maria Firmina escreveu 'Úrsula' em 1859, a primeira obra romancista abolicionista do Brasil e uma das pioneiras da América Latina escrita por uma mulher negra.",
+                artType: "firmina"
+            },
+            {
+                id: 6,
+                title: "Movimento Negro",
+                subtitle: "Cidadania e Conquistas",
+                icon: "✊🏿",
+                color: "#f97316",
+                desc: "A contínua mobilização do Movimento Negro resultou em conquistas sociais marcantes no Brasil contemporâneo, como as Leis de Cotas e a obrigatoriedade do ensino da história e cultura afro-brasileira nas escolas.",
+                artType: "movimento"
+            }
+        ];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuração de Grade Mobile (13 colunas x 15 linhas)
+        const TILE_SIZE = 28;
+        const MAP_COLS = 13;
+        const MAP_ROWS = 15;
+
+        // Labirinto Otimizado para Telas Verticais (0 = Livre, 1 = Parede)
+        const mazeGrid = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,0,0,1],
+            [1,0,1,0,1,0,1,1,1,1,1,0,1],
+            [1,0,1,0,0,0,1,0,0,0,1,0,1],
+            [1,0,1,1,1,0,1,0,1,0,1,0,1],
+            [1,0,0,0,1,0,0,0,1,0,0,0,1],
+            [1,1,1,0,1,1,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,1,0,0,0,1,0,1],
+            [1,0,1,1,1,0,1,1,1,0,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,0,0,1],
+            [1,0,1,0,1,1,1,0,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,1],
+            [1,1,1,0,1,0,1,1,1,0,1,0,1],
+            [1,0,0,0,0,0,1,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Estado da Personagem Carismática (Dandara Menina)
+        let player = {
+            x: 1.5 * TILE_SIZE,
+            y: 1.5 * TILE_SIZE,
+            radius: 10,
+            speed: 2.3,
+            facing: 'down',
+            walkFrame: 0,
+            isWalking: false
+        };
+
+        let collectibles = [];
+        let collectedItemIds = new Set();
+        let activeDirections = { up: false, down: false, left: false, right: false };
+
+        const itemLocations = [
+            { col: 11, row: 1, recordId: 1 },  // Zumbi
+            { col: 1, row: 13, recordId: 2 },  // Dandara
+            { col: 5, row: 7, recordId: 3 },   // Luiz Gama
+            { col: 11, row: 9, recordId: 4 },  // Machado
+            { col: 7, row: 1, recordId: 5 },   // Maria Firmina
+            { col: 9, row: 13, recordId: 6 }   // Movimento Negro
+        ];
+
+        function initCollectibles() {
+            collectibles = itemLocations.map(loc => ({
+                x: (loc.col + 0.5) * TILE_SIZE,
+                y: (loc.row + 0.5) * TILE_SIZE,
+                record: HISTORICAL_RECORDS.find(r => r.id === loc.recordId),
+                collected: false
+            }));
+        }
+
+        function resizeCanvas() {
+            canvas.width = MAP_COLS * TILE_SIZE;
+            canvas.height = MAP_ROWS * TILE_SIZE;
+        }
+
+        // VINCULAÇÃO DE EVENTOS DE TOQUE NOS BOTÕES D-PAD
+        function bindTouchControls() {
+            const bindBtn = (id, dir) => {
+                const el = document.getElementById(id);
+                const start = (e) => { e.preventDefault(); activeDirections[dir] = true; };
+                const end = (e) => { e.preventDefault(); activeDirections[dir] = false; };
+
+                el.addEventListener('touchstart', start, { passive: false });
+                el.addEventListener('touchend', end, { passive: false });
+                el.addEventListener('mousedown', start);
+                el.addEventListener('mouseup', end);
+                el.addEventListener('mouseleave', end);
+            };
+
+            bindBtn('btn-up', 'up');
+            bindBtn('btn-down', 'down');
+            bindBtn('btn-left', 'left');
+            bindBtn('btn-right', 'right');
+        }
+
+        // Suporte Teclado Desktop
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || k === 'arrowup') activeDirections.up = true;
+            if (k === 's' || k === 'arrowdown') activeDirections.down = true;
+            if (k === 'a' || k === 'arrowleft') activeDirections.left = true;
+            if (k === 'd' || k === 'arrowright') activeDirections.right = true;
+            if (k === 'i') toggleInventory();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || k === 'arrowup') activeDirections.up = false;
+            if (k === 's' || k === 'arrowdown') activeDirections.down = false;
+            if (k === 'a' || k === 'arrowleft') activeDirections.left = false;
+            if (k === 'd' || k === 'arrowright') activeDirections.right = false;
+        });
+
+        function updatePlayer() {
+            let dx = 0;
+            let dy = 0;
+
+            if (activeDirections.up) dy -= 1;
+            if (activeDirections.down) dy += 1;
+            if (activeDirections.left) dx -= 1;
+            if (activeDirections.right) dx += 1;
+
+            player.isWalking = (dx !== 0 || dy !== 0);
+
+            if (player.isWalking) {
+                player.walkFrame += 0.25;
+                if (dy < 0) player.facing = 'up';
+                if (dy > 0) player.facing = 'down';
+                if (dx < 0) player.facing = 'left';
+                if (dx > 0) player.facing = 'right';
+
+                if (dx !== 0 && dy !== 0) {
+                    dx *= 0.7071;
+                    dy *= 0.7071;
+                }
+
+                let nextX = player.x + dx * player.speed;
+                if (!checkCollision(nextX, player.y)) player.x = nextX;
+
+                let nextY = player.y + dy * player.speed;
+                if (!checkCollision(player.x, nextY)) player.y = nextY;
+
+                checkItemCollection();
+            }
+        }
+
+        function checkCollision(px, py) {
+            const r = player.radius - 2;
+            const points = [
+                { x: px - r, y: py - r }, { x: px + r, y: py - r },
+                { x: px - r, y: py + r }, { x: px + r, y: py + r }
+            ];
+
+            for (let p of points) {
+                const col = Math.floor(p.x / TILE_SIZE);
+                const row = Math.floor(p.y / TILE_SIZE);
+                if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return true;
+                if (mazeGrid[row][col] === 1) return true;
+            }
+            return false;
+        }
+
+        function checkItemCollection() {
+            collectibles.forEach(item => {
+                if (!item.collected) {
+                    const dist = Math.hypot(player.x - item.x, player.y - item.y);
+                    if (dist < player.radius + 12) {
+                        item.collected = true;
+                        collectedItemIds.add(item.record.id);
+                        updateHUD();
+                        renderInventoryUI();
+                        document.getElementById('inv-badge').classList.remove('hidden');
+                        openModal(item.record);
+
+                        if (collectedItemIds.size === HISTORICAL_RECORDS.length) {
+                            setTimeout(() => {
+                                document.getElementById('victory-modal').classList.remove('hidden');
+                            }, 700);
+                        }
+                    }
+                }
+            });
+        }
+
+        // DESENHO DO MAPA E ILUSTRAÇÃO DA PERSONAGEM CARISMÁTICA
+        function drawMap() {
+            ctx.fillStyle = '#140c08';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < MAP_ROWS; r++) {
+                for (let c = 0; c < MAP_COLS; c++) {
+                    const x = c * TILE_SIZE;
+                    const y = r * TILE_SIZE;
+
+                    if (mazeGrid[r][c] === 1) {
+                        // Parede com padrão de tijolos/afro
+                        ctx.fillStyle = '#2b170c';
+                        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                        ctx.strokeStyle = '#422415';
+                        ctx.strokeRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+
+                        // Padrão geométrico decorativo sutil
+                        if ((r + c) % 2 === 0) {
+                            ctx.fillStyle = '#f59e0b';
+                            ctx.fillRect(x + TILE_SIZE / 2 - 1.5, y + TILE_SIZE / 2 - 1.5, 3, 3);
+                        }
+                    } else {
+                        // Chão do Labirinto
+                        ctx.fillStyle = '#1b120c';
+                        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                    }
+                }
+            }
+        }
+
+        function drawCollectibles() {
+            const time = Date.now() * 0.004;
+            collectibles.forEach(item => {
+                if (!item.collected) {
+                    const floatY = item.y + Math.sin(time) * 3;
+
+                    // Brilho dourado
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+                    ctx.beginPath();
+                    ctx.arc(item.x, floatY, 14, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Pergaminho Histórico
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fillRect(item.x - 7, floatY - 8, 14, 16);
+                    ctx.fillStyle = '#451a03';
+                    ctx.fillRect(item.x - 4, floatY - 4, 8, 2);
+                    ctx.fillRect(item.x - 4, floatY, 8, 2);
+                    ctx.fillRect(item.x - 4, floatY + 4, 5, 2);
+                }
+            });
+        }
+
+        function drawPlayer() {
+            // Animação de caminhada (Bobbing)
+            const bob = player.isWalking ? Math.sin(player.walkFrame) * 2 : 0;
+            const px = player.x;
+            const py = player.y + bob;
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.beginPath();
+            ctx.ellipse(px, player.y + 10, 9, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // CABELO AFRO CARISMÁTICO (VOLUMOSO E BONITO)
+            ctx.fillStyle = '#1c1917';
+            ctx.beginPath();
+            ctx.arc(px, py - 6, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ROUPA VIBRANTE (Vestido Amarelo com Faixa Vermelha)
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(px, py + 4, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(px - 6, py + 2, 12, 3);
+
+            // ROSTO FOFO E EXPRESSIVO
+            ctx.fillStyle = '#5c3317'; // Tom de pele rico
+            ctx.beginPath();
+            ctx.arc(px, py - 1, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // OLHOS GRANDES E EXPRESSIVOS
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(px - 3, py - 2, 2.5, 0, Math.PI * 2);
+            ctx.arc(px + 3, py - 2, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupilas brilhantes
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(px - 3 + (player.facing === 'right' ? 0.8 : player.facing === 'left' ? -0.8 : 0), py - 2, 1.3, 0, Math.PI * 2);
+            ctx.arc(px + 3 + (player.facing === 'right' ? 0.8 : player.facing === 'left' ? -0.8 : 0), py - 2, 1.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // BRILHO NOS OLHOS (FOFO)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(px - 3.5, py - 2.8, 0.6, 0, Math.PI * 2);
+            ctx.arc(px + 2.5, py - 2.8, 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // SORRISO SIMPÁTICO
+            ctx.strokeStyle = '#3d1e08';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+
+            // LAÇO OU FLORES NO CABELO
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(px + 10, py - 12, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            updatePlayer();
+            drawMap();
+            drawCollectibles();
+            drawPlayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // UI & INTERAÇÕES
+        function updateHUD() {
+            document.getElementById('collected-count').innerText = `${collectedItemIds.size}/${HISTORICAL_RECORDS.length}`;
+        }
+
+        function toggleInventory() {
+            const drawer = document.getElementById('inventory-drawer');
+            drawer.classList.toggle('translate-x-full');
+            document.getElementById('inv-badge').classList.add('hidden');
+        }
+
+        function renderInventoryUI() {
+            const container = document.getElementById('inventory-list');
+            container.innerHTML = '';
+
+            HISTORICAL_RECORDS.forEach(record => {
+                const isCollected = collectedItemIds.has(record.id);
+                const card = document.createElement('div');
+
+                if (isCollected) {
+                    card.className = "bg-stone-950 border border-amber-500/60 p-2.5 rounded-xl flex items-center space-x-3 cursor-pointer active:scale-98 transition shadow";
+                    card.onclick = () => openModal(record);
+                    card.innerHTML = `
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-400 flex items-center justify-center text-xl flex-shrink-0">
+                            ${record.icon}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-title text-xs font-bold text-amber-400 truncate">${record.title}</h4>
+                            <p class="text-[10px] text-stone-400 truncate">${record.subtitle}</p>
+                            <span class="text-[9px] text-amber-300 underline font-semibold">Toque para ler →</span>
+                        </div>
+                    `;
+                } else {
+                    card.className = "bg-stone-950/40 border border-stone-800 p-2.5 rounded-xl flex items-center space-x-3 opacity-40 select-none";
+                    card.innerHTML = `
+                        <div class="w-10 h-10 rounded-lg bg-stone-900 flex items-center justify-center text-sm text-stone-600 flex-shrink-0">
+                            🔒
+                        </div>
+                        <div>
+                            <h4 class="font-title text-xs font-bold text-stone-500">Bloqueado</h4>
+                            <p class="text-[10px] text-stone-600">Encontre no labirinto</p>
+                        </div>
+                    `;
+                }
+                container.appendChild(card);
+            });
+        }
+
+        function openModal(record) {
+            document.getElementById('modal-icon').innerText = record.icon;
+            document.getElementById('modal-title').innerText = record.title;
+            document.getElementById('modal-subtitle').innerText = record.subtitle;
+            document.getElementById('modal-body-text').innerHTML = `<p>${record.desc}</p>`;
+            renderModalArt(record.artType, record.color);
+            document.getElementById('reading-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('reading-modal').classList.add('hidden');
+        }
+
+        function renderModalArt(artType, color) {
+            const container = document.getElementById('modal-svg-art');
+            container.innerHTML = `
+                <svg viewBox="0 0 200 120" class="w-full h-full">
+                    <rect width="200" height="120" fill="#140c08"/>
+                    <circle cx="100" cy="55" r="40" fill="none" stroke="${color}" stroke-width="2" opacity="0.4"/>
+                    <text x="100" y="60" font-size="28" text-anchor="middle" fill="${color}">${
+                        artType==='zumbi'?'👑':artType==='dandara'?'⚔️':artType==='luizgama'?'⚖️':artType==='machado'?'✍️':artType==='firmina'?'📚':'✊🏿'
+                    }</text>
+                    <text x="100" y="100" font-size="10" fill="#fbbf24" text-anchor="middle" font-family="Fredoka">CONSCIÊNCIA NEGRA</text>
+                </svg>`;
+        }
+
+        function restartGame() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            collectedItemIds.clear();
+            player.x = 1.5 * TILE_SIZE;
+            player.y = 1.5 * TILE_SIZE;
+            initCollectibles();
+            updateHUD();
+            renderInventoryUI();
+        }
+
+        window.onload = () => {
+            resizeCanvas();
+            bindTouchControls();
+            initCollectibles();
+            updateHUD();
+            renderInventoryUI();
+            gameLoop();
+        };
+
+        window.onresize = () => resizeCanvas();
+    </script>
+</body>
+</html>
