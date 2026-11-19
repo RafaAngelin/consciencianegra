@@ -12,7 +12,7 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #0d0907;
+            background-color: #101b2a;
             color: #f3f4f6;
             overflow: hidden;
             touch-action: manipulation;
@@ -31,7 +31,7 @@
 
         /* Estilização Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #1c130e; }
+        ::-webkit-scrollbar-track { background: #142638; }
         ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 4px; }
 
         /* Animação de pulso no item colecionável */
@@ -60,16 +60,16 @@
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between overflow-hidden bg-stone-950">
+<body class="h-screen w-screen flex flex-col justify-between overflow-hidden bg-slate-950">
 
     <!-- TOP BAR / HUD MOBILE FIRST -->
     <header class="w-full bg-stone-900/90 border-b-2 border-amber-500/60 px-4 py-2.5 flex items-center justify-between z-20 shadow-md">
         <div class="flex items-center space-x-2.5">
             <div class="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-stone-950 font-bold text-lg shadow-inner">
-                ✊🏿
+                📜
             </div>
             <div>
-                <h1 class="font-title text-base sm:text-lg font-bold text-amber-400 leading-none">Memória Negra</h1>
+                <h1 class="font-title text-base sm:text-lg font-bold text-amber-400 leading-none">Registros do passado</h1>
                 <p class="text-[10px] sm:text-xs text-amber-200/70">Resgate os Registros</p>
             </div>
         </div>
@@ -90,17 +90,17 @@
     </header>
 
     <!-- ÁREA PRINCIPAL DO CANVAS DE JOGO -->
-    <main class="relative flex-1 w-full h-full flex flex-col items-center justify-center bg-stone-950 overflow-hidden">
+    <main class="relative flex-1 w-full h-full flex flex-col items-center justify-center bg-slate-950 overflow-hidden">
         <!-- Canvas Otimizado Mobile -->
         <div class="relative max-w-full max-h-full flex items-center justify-center p-2">
-            <canvas id="gameCanvas" class="rounded-2xl border-2 border-amber-600/50 shadow-2xl bg-stone-900"></canvas>
+            <canvas id="gameCanvas" class="rounded-2xl border-2 border-sky-700/60 shadow-2xl bg-slate-900"></canvas>
         </div>
     </main>
 
-    <!-- CONTROLES MOBILE (D-PAD TOUCH VIRTUAL) NA PARTE INFERIOR -->
-    <footer class="w-full bg-stone-900/90 border-t border-amber-900/40 p-3 flex justify-between items-center z-20">
-        <!-- Joystick / D-Pad direcional bem espaçado para telas de toque -->
-        <div class="relative w-36 h-36 mx-auto grid grid-cols-3 gap-1.5 p-1 bg-stone-950/80 rounded-full border border-amber-600/30 shadow-inner">
+    <!-- CONTROLES FLUTUANTES SOBRE O CENÁRIO -->
+    <footer class="fixed right-3 bottom-3 sm:right-5 sm:bottom-5 z-30 pointer-events-none" style="bottom: max(12px, env(safe-area-inset-bottom));">
+        <!-- D-Pad compacto: permanece sobre o jogo sem ocupar espaço do layout -->
+        <div class="pointer-events-auto relative w-28 h-28 sm:w-36 sm:h-36 grid grid-cols-3 grid-rows-3 gap-1 p-1.5 bg-slate-950/75 backdrop-blur-md rounded-full border border-sky-400/40 shadow-2xl">
             <div></div>
             <button id="btn-up" class="touch-btn bg-stone-800 text-amber-400 rounded-t-2xl flex items-center justify-center text-xl active:text-white">
                 <i class="fa-solid fa-caret-up"></i>
@@ -435,7 +435,7 @@
 
         // DESENHO DO MAPA E ILUSTRAÇÃO DA PERSONAGEM CARISMÁTICA
         function drawMap() {
-            ctx.fillStyle = '#140c08';
+            ctx.fillStyle = '#102b38';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             for (let r = 0; r < MAP_ROWS; r++) {
@@ -445,19 +445,19 @@
 
                     if (mazeGrid[r][c] === 1) {
                         // Parede com padrão de tijolos/afro
-                        ctx.fillStyle = '#2b170c';
+                        ctx.fillStyle = '#25485a';
                         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-                        ctx.strokeStyle = '#422415';
+                        ctx.strokeStyle = '#3c6578';
                         ctx.strokeRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2);
 
                         // Padrão geométrico decorativo sutil
                         if ((r + c) % 2 === 0) {
-                            ctx.fillStyle = '#f59e0b';
+                            ctx.fillStyle = '#6f9eaa';
                             ctx.fillRect(x + TILE_SIZE / 2 - 1.5, y + TILE_SIZE / 2 - 1.5, 3, 3);
                         }
                     } else {
                         // Chão do Labirinto
-                        ctx.fillStyle = '#1b120c';
+                        ctx.fillStyle = '#173b49';
                         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
                     }
                 }
@@ -628,7 +628,7 @@
             const container = document.getElementById('modal-svg-art');
             container.innerHTML = `
                 <svg viewBox="0 0 200 120" class="w-full h-full">
-                    <rect width="200" height="120" fill="#140c08"/>
+                    <rect width="200" height="120" fill="#102b38"/>
                     <circle cx="100" cy="55" r="40" fill="none" stroke="${color}" stroke-width="2" opacity="0.4"/>
                     <text x="100" y="60" font-size="28" text-anchor="middle" fill="${color}">${
                         artType==='zumbi'?'👑':artType==='dandara'?'⚔️':artType==='luizgama'?'⚖️':artType==='machado'?'✍️':artType==='firmina'?'📚':'✊🏿'
